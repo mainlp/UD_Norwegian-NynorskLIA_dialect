@@ -49,7 +49,7 @@ replacements = {
         "og så": "å så",
         "knupp": "x_knupp",
         "strekar": "streker",
-        "køyrt": "# køyrt",
+        "køyrt": "# køyrt",  # TODO fix alignment
         "så det gjekk fint": "(så det gjekk fint)",
         "langvarig": "lanngvari",
         "blei aldri": "blei ældri",
@@ -352,8 +352,8 @@ def add_utt(speaker_norm, speaker_cur, ortho, phono, speaker2ortho2phon):
             speaker2ortho2phon[speaker_cur][ortho] = phono
 
 
-def get_speaker2ortho2phon():
-    speaker2ortho2phon = {}
+def get_speaker2ortho2phono():
+    speaker2ortho2phono = {}
     for speaker in get_speakers("UD_Norwegian-NynorskLIA/*.conllu"):
         speaker_norm = look_up_speaker(speaker)
         for in_file in glob("lia_norsk/" + look_up_speaker(speaker_norm)
@@ -366,7 +366,7 @@ def get_speaker2ortho2phon():
                     if line[0] == "\n":
                         if phono and ortho:
                             add_utt(speaker_norm, speaker_cur, ortho, phono,
-                                    speaker2ortho2phon)
+                                    speaker2ortho2phono)
                             ortho = ""
                             phono = ""
                         speaker_cur = None
@@ -388,68 +388,113 @@ def get_speaker2ortho2phon():
                             phono += " " + line.strip()
             if phono and ortho:
                 add_utt(speaker_norm, speaker_cur, ortho, phono,
-                        speaker2ortho2phon)
-    return speaker2ortho2phon
+                        speaker2ortho2phono)
+    return speaker2ortho2phono
 
 
-def traverse_files(speaker2ortho2phon):
-    for in_file in glob("UD_Norwegian-NynorskLIA/*.conllu"):
-        with open(in_file) as f_in:
+def find_phono(speaker, ortho, speaker2ortho2phono):
+    actual_speaker = look_up_speaker(speaker)
+    phono = None
+    try:
+        phono = speaker2ortho2phono[actual_speaker][ortho]
+    except KeyError:
+        interviewer = "INTERVIEWER_" + actual_speaker
+        try:
+            phono = speaker2ortho2phono[interviewer][ortho]
+            actual_speaker = interviewer
+        except KeyError:
+            if speaker in replacements:
+                repls = replacements[speaker]
+                for repl in repls:
+                    updated_ortho = ortho.replace(repl,
+                                                  repls[repl])
+                    try:
+                        phono = speaker2ortho2phono[
+                            actual_speaker][updated_ortho]
+                    except KeyError:
+                        try:
+                            phono = speaker2ortho2phono[
+                                interviewer][updated_ortho]
+                            actual_speaker = interviewer
+                            break
+                        except KeyError:
+                            pass
+    return phono, actual_speaker
+
+
+def add_dialect_to_misc(phono, word_entries):
+    dialect_words = phono.split(" ")
+    if len(dialect_words) != len(word_entries):
+        print("/!\\ Dialect words and token entries don't match:")
+        print(f"{len(dialect_words)} dialect words,"
+              f"{len(word_entries)} token entries")
+        print(dialect_words)
+        for entry in word_entries:
+            print(entry)
+        for entry, d in zip(word_entries, dialect_words):
+            print(d, entry)
+        return False
+        # TODO
+    return True
+
+
+def make_dialect_file(in_file, speaker2ortho2phono):
+    out_file = in_file.split("/")[-1].replace("nynorsklia-",
+                                              "nynorsklia_dialect-")
+    with open(in_file) as f_in:
+        with open(out_file, "w+", encoding="utf8") as f_out:
             ortho = None
+            phono = None
+            word_entries = []
+            ignore_phono = False
             for line in f_in:
+                if not line.strip():
+                    f_out.write(line)
+                    # TODO
+                    if ignore_phono:
+                        ignore_phono = False
+                    else:
+                        success = add_dialect_to_misc(phono, word_entries)
+                        if not success:
+                            return False
+                    word_entries = []
+                    continue
                 if line[0] != "#":
+                    f_out.write(line)
+                    word_entries.append(line.strip())
                     continue
                 cells = line.split("text = ")
                 if len(cells) == 2:
                     ortho = cells[1].strip()
+                    f_out.write(line)
                     continue
                 cells = line.split("speakerid: ")
                 if len(cells) == 1:
+                    f_out.write(line)
                     continue
                 speaker = cells[1].strip()
                 try:
                     if ortho in ignore[speaker]:
+                        f_out.write(line)
+                        ignore_phono = True
                         continue
                 except KeyError:
                     pass
-                actual_speaker = look_up_speaker(speaker)
-                try:
-                    phon = speaker2ortho2phon[actual_speaker][ortho]
-    #                 print("!!!!", phon)
-                except KeyError:
-                    interviewer = "INTERVIEWER_" + actual_speaker
-                    try:
-                        phon = speaker2ortho2phon[interviewer][ortho]
-    #                     print("****", phon)
-                        actual_speaker = interviewer
-                    except KeyError:
-                        found = False
-                        if speaker in replacements:
-                            repls = replacements[speaker]
-                            for repl in repls:
-                                updated_ortho = ortho.replace(repl,
-                                                              repls[repl])
-                                try:
-                                    phon = speaker2ortho2phon[
-                                        actual_speaker][updated_ortho]
-        #                             print("!!__", phon)
-                                    found = True
-                                except KeyError:
-                                    try:
-                                        phon = speaker2ortho2phon[
-                                            interviewer][updated_ortho]
-        #                                 print("**__", phon)
-                                        actual_speaker = interviewer
-                                        found = True
-                                        break
-                                    except KeyError:
-                                        pass
-                        if not found:
-                            print(speaker)
-                            print(ortho)
-                            break
+                phono, actual_speaker = find_phono(speaker, ortho,
+                                                   speaker2ortho2phono)
+                ignore_phono = False
+                if not phono:
+                    print("/!\\ Couldn't find the following utterance")
+                    print(speaker)
+                    print(ortho)
+                    return False
+                f_out.write(line)
+                f_out.write("# text_orig: " + phono + "\n")
+                if actual_speaker != speaker:
+                    f_out.write(f"# corrected_speakerid: {actual_speaker}\n")
+    return True
 
 
 if __name__ == "main":
-    speaker2ortho2phon = get_speaker2ortho2phon()
-    traverse_files(speaker2ortho2phon)
+    speaker2ortho2phono = get_speaker2ortho2phono()
+    make_dialect_file(speaker2ortho2phono)
