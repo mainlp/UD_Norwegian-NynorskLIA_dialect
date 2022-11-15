@@ -33,8 +33,9 @@ replacements = {
         "to-tre": "to tre",
     },
     "bardu_uit_01": {
-        # Mistake in the LIA file:
+        # Mistakes in the LIA file:
         "s- sånn": "s sånn",
+        "det e ": "det ee ",
         # Mistake in the treebank file:
         "par du": "veit du",
     },
@@ -78,6 +79,7 @@ replacements = {
         "forsvann": "forvann",
         "høvedsmann": "høvedsmannn",
         "oppdaga": "opdaga",
+        "gjorde": "gjode",
     },
     "giske_uib_02": {
         # Mistakes in the LIA file:
@@ -97,6 +99,7 @@ replacements = {
         " m- ": " m ",
         "skalleseien": "skallesæien",
         "på e": "på- e",
+        "driv": "idriv",
         # Mistakes in the treebank version
         # (caused by "forbidden" spaces between an avhengig tagg
         # and the parenthesis)
@@ -105,6 +108,8 @@ replacements = {
         "(at det": "at det",
         "(og tok det opp det": "og tok det opp det",
         "(frå e vest-": "frå e vest-",
+        "(skjebba": "skjebba",
+        "(ja": "ja",
     },
     "gol_uio_01": {
         # Mistake in the treebank file:
@@ -146,6 +151,9 @@ ignore = {
         "ja # båtar # teiknarbåtar og # berekning og # forskjellig sånn .",
         # -- teiknarbåtar vs. teiknar båtar
         #    (the latter makes much more sense in context)
+        "om du skal # evakuere ei # ja hundre menneske da veit du "
+        "så # må du ha plass til dei òg .",
+        # -- om vs. __ (checked audio: utterance starts with 'du skal')
     ),
     "austevoll_uib_04": (
         "kva tid kom e snurpenota i bruk "
@@ -181,6 +189,11 @@ ignore = {
         "# drått og så? dråtten i skodda ja dråtten # "
         "det kalla du for « dråtten » .",
         # -- Merged interviewer and interviewee
+        "ja . … .",
+        # -- Merges two interviewer utterances
+        #    (arguably not a mistake)
+        "på tvers ut ifrå # ? - … .",
+        # -- Merged interviewer and interviewee
     ),
     "giske_uib_02": (
         "det er må ein helst e å seie er nokså dårleg etter så som e # "
@@ -206,6 +219,10 @@ ignore = {
         "ja # på Island e brukar ikkje dei å ligge så svært lenge utover "
         "hausten for det er så langt dit .",
         # -- Merged interviewer + interviewee
+        "er det nokon plass spesielt her der e "
+        "der e denne her fuglen e legg reir? eller har reir ?"
+        # -- Merges two interviewer utterances
+        #    (arguably not a mistake)
     ),
     "lierne_uio_01": (
         "men det har ikkje eg høyrt før enn veit du dei tala i det "
@@ -252,7 +269,8 @@ def clean_utterance(utt):
     # https://tekstlab.uio.no/LIA/pdf/transkripsjonsrettleiing_lia.pdf
     # and the transliteration guidelines, p. 3, "X-tagg",
     # https://tekstlab.uio.no/LIA/pdf/rettleiing-translitterator.pdf
-    for symb in ("%u", "%l", "%g", "%v", "%y", "%k", "%s", "%q", "%o", "%p"):
+    for symb in ("%u", "%u-", "%l", "%g", "%v",
+                 "%y", "%k", "%s", "%q", "%o", "%p"):
         utt = utt.replace(symb, "")
     utt = utt.replace("+x_", "")
     for symb in ("+u", "+l", "+g", "+v", "+y", "+s"):
@@ -375,8 +393,7 @@ def get_speaker2ortho2phon():
 
 
 def traverse_files(speaker2ortho2phon):
-    # for in_file in glob("UD_Norwegian-NynorskLIA/*.conllu"):  # TODO
-    for in_file in glob("UD_Norwegian-NynorskLIA/*test.conllu"):
+    for in_file in glob("UD_Norwegian-NynorskLIA/*.conllu"):
         with open(in_file) as f_in:
             ortho = None
             for line in f_in:
