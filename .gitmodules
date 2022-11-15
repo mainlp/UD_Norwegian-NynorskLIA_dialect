@@ -1,0 +1,3 @@
+[submodule "UD_Norwegian-NynorskLIA"]
+	path = UD_Norwegian-NynorskLIA
+	url = https://github.com/UniversalDependencies/UD_Norwegian-NynorskLIA
