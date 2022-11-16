@@ -473,12 +473,16 @@ def make_dialect_file(in_file, speaker2ortho2phono):
             ortho = None
             phono = None
             speaker = None
+            actual_speaker = None
             word_entries = []
             ignore_phono = False
             for line in f_in:
                 if not line.strip():
-                    if ignore_phono:
+                    if ignore_phono or\
+                            actual_speaker.startswith("INTERVIEWER_"):
                         ignore_phono = False
+                        for entry in word_entries:
+                            f_out.write(entry + "\n")
                     else:
                         success = add_dialect_to_misc(f_out, speaker,
                                                       phono, word_entries)
@@ -515,7 +519,8 @@ def make_dialect_file(in_file, speaker2ortho2phono):
                     print(speaker)
                     print(ortho)
                     return False
-                f_out.write("# text_orig = " + phono + "\n")
+                if not actual_speaker.startswith("INTERVIEWER_"):
+                    f_out.write("# text_orig = " + phono + "\n")
                 f_out.write(line)
                 if actual_speaker != speaker:
                     f_out.write(f"# corrected_speakerid: {actual_speaker}\n")
