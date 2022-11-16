@@ -51,5 +51,5 @@ After:
 
 Every sentence where the phonetic transcription could be added also has an additional `text_orig` comment.
 Sentences where the speaker has a different identity in the LIA transcriptions also have a `corrected_speakerid` comment.
-This is the case for files that were renamed either in the LIA project or for the treebanks, and the case for any utterances made by the interviewers rather than the dialect informants.
+This is the case for files that were renamed either in the LIA project or in the treebank, and the case for any utterances made by the interviewers rather than the dialect informants.
 (Note that none of the interviewer utterances come with phonetic transcriptions.)
