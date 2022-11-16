@@ -1,6 +1,6 @@
 # UD_Norwegian-NynorskLIA_dialect
 
-Run `run.sh` to first get the transcriptions from the [LIA norsk](http://tekstlab.uio.no/LIA/norsk/index.html) project ([CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)), and to then automatically add the phonetic transcriptions to the MISC entries, where available.
+Run `run.sh` to first get the transcriptions from the [LIA norsk](http://tekstlab.uio.no/LIA/norsk/index.html) project ([CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)), and to then to copy the files and automatically add the phonetic transcriptions to the MISC entries, where available.
 
 Before:
 ```
