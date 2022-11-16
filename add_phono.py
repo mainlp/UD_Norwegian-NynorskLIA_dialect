@@ -6,7 +6,9 @@ from glob import glob
 speaker_map = {"farsund_uib_02": "lista_uib_05",
                "lierne_uio_01": "nordli_uio_01"}
 
-
+# Phrases necessary to replace in the treebank version
+# in order to find the corresponding entries in the
+# original LIA transcripts.
 replacements = {
     "aal_uio_02": {
         # Mistakes in the LIA file
@@ -26,10 +28,7 @@ replacements = {
         "halvtanna": "halvanna",
     },
     "austevoll_uib_04": {
-        # Mistake in the treebank file:
-        "vart annan måte": "vart ein annan måte",
-        # Different analysis in files:
-        # TODO fix alignment
+        # Different analyses:
         "to-tre": "to tre",
     },
     "bardu_uit_01": {
@@ -49,7 +48,7 @@ replacements = {
         "og så": "å så",
         "knupp": "x_knupp",
         "strekar": "streker",
-        "køyrt": "# køyrt",  # TODO fix alignment
+        "køyrt": "# køyrt",
         "så det gjekk fint": "(så det gjekk fint)",
         "langvarig": "lanngvari",
         "blei aldri": "blei ældri",
@@ -135,7 +134,10 @@ replacements = {
     },
 }
 
-# Mistakes in the treebank or LIA files (mostly treebank mistakes):
+# Mistakes in the treebank or LIA files that make
+# alignment difficult, because of merged utterances,
+# word substitutions or missing words.
+# (Mostly treebank mistakes.)
 ignore = {
     "aal_uio_02": (
         "så ville vi ha ville vi ha e ha e køyring så måtte vi vi ta det "
@@ -160,6 +162,8 @@ ignore = {
         "e ja den var nå vel kommen antakeleg i bruk føre mine dagar .",
         # -- Merged interviewer + interviewee.
         #    Also a typo in LIA file: snu[u]rpenota
+        "det vart annan måte kanskje ?",
+        # -- annan vs. ein annan
     ),
     "eidsberg_uio_03": (
         "det var tungvint? ja # det var e tungvint .",
@@ -240,6 +244,15 @@ ignore = {
         "det det med austavind for eksempel # nå korleis det ?",
         # -- korleis vs. korleis blei
     ),
+}
+
+# Changes that need to be made to the phonetic LIA
+# transcriptions in order to enable a token-wise
+# alignment with the treebank.
+alignment_fix = {
+    "austevoll_uib_04": (("to tre", "to-tre"), ),
+    "eidsberg_uio_03": (("få # kjørt", "få kjørt"),
+                        ("(re) ", ""))
 }
 
 
@@ -422,19 +435,33 @@ def find_phono(speaker, ortho, speaker2ortho2phono):
     return phono, actual_speaker
 
 
-def add_dialect_to_misc(phono, word_entries):
+def add_dialect_to_misc(f_out, speaker, phono, word_entries):
     dialect_words = phono.split(" ")
     if len(dialect_words) != len(word_entries):
-        print("/!\\ Dialect words and token entries don't match:")
-        print(f"{len(dialect_words)} dialect words,"
-              f"{len(word_entries)} token entries")
-        print(dialect_words)
-        for entry in word_entries:
-            print(entry)
-        for entry, d in zip(word_entries, dialect_words):
-            print(d, entry)
-        return False
-        # TODO
+        fixed = False
+        if speaker in alignment_fix:
+            for fix in alignment_fix[speaker]:
+                dialect_words = phono.replace(fix[0], fix[1]).split(" ")
+                if len(dialect_words) == len(word_entries):
+                    fixed = True
+                    break
+        if not fixed:
+            print("/!\\ Dialect words and token entries don't match:")
+            print(f"{len(dialect_words)} dialect words,"
+                  f"{len(word_entries)} token entries")
+            print(speaker)
+            print(dialect_words)
+            for dial, entry in zip(dialect_words, word_entries):
+                print(dial, entry[:10])
+            return False
+    for dial, entry in zip(dialect_words, word_entries):
+        main, _, misc = entry.rpartition("\t")
+        if misc == "_":
+            misc = ""
+        else:
+            misc += "|"
+        misc += "Phono=" + dial
+        f_out.write(main + "\t" + misc + "\n")
     return True
 
 
@@ -445,22 +472,22 @@ def make_dialect_file(in_file, speaker2ortho2phono):
         with open(out_file, "w+", encoding="utf8") as f_out:
             ortho = None
             phono = None
+            speaker = None
             word_entries = []
             ignore_phono = False
             for line in f_in:
                 if not line.strip():
-                    f_out.write(line)
-                    # TODO
                     if ignore_phono:
                         ignore_phono = False
                     else:
-                        success = add_dialect_to_misc(phono, word_entries)
+                        success = add_dialect_to_misc(f_out, speaker,
+                                                      phono, word_entries)
                         if not success:
                             return False
                     word_entries = []
+                    f_out.write(line)
                     continue
                 if line[0] != "#":
-                    f_out.write(line)
                     word_entries.append(line.strip())
                     continue
                 cells = line.split("text = ")
@@ -488,13 +515,19 @@ def make_dialect_file(in_file, speaker2ortho2phono):
                     print(speaker)
                     print(ortho)
                     return False
+                f_out.write("# text_orig = " + phono + "\n")
                 f_out.write(line)
-                f_out.write("# text_orig: " + phono + "\n")
                 if actual_speaker != speaker:
                     f_out.write(f"# corrected_speakerid: {actual_speaker}\n")
+        if word_entries:
+            success = add_dialect_to_misc(f_out, speaker, phono, word_entries)
+            return success
     return True
 
 
-if __name__ == "main":
+if __name__ == "__main__":
     speaker2ortho2phono = get_speaker2ortho2phono()
-    make_dialect_file(speaker2ortho2phono)
+    for filename in glob("UD_Norwegian-NynorskLIA/*.conllu"):
+        success = make_dialect_file(filename, speaker2ortho2phono)
+        if not success:
+            break
