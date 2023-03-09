@@ -1,5 +1,11 @@
 # UD_Norwegian-NynorskLIA_dialect
 
+This script adds word-level phonetic transcriptions to the [UD Norwegian NynorskLIA](https://github.com/UniversalDependencies/UD_Norwegian-NynorskLIA) treebank ([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)).
+
+It was used for the paper *TBD*.
+
+## Usage/details
+
 Run `run.sh` to first get the transcriptions from the [LIA norsk](http://tekstlab.uio.no/LIA/norsk/index.html) project ([CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)), and to then to copy the files and automatically add the phonetic transcriptions to the MISC entries, where available.
 
 Before:
