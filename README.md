@@ -1,8 +1,8 @@
 # UD_Norwegian-NynorskLIA_dialect
 
-This script adds word-level phonetic transcriptions to the [UD Norwegian NynorskLIA](https://github.com/UniversalDependencies/UD_Norwegian-NynorskLIA) treebank ([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)).
+This script adds word-level phonetic transcriptions to the [UD Norwegian NynorskLIA](https://github.com/UniversalDependencies/UD_Norwegian-NynorskLIA) treebank ([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); article: [Øvrelid ea 2018](https://aclanthology.org/L18-1710/)).
 
-It was used for the paper *TBD*.
+It was used for the paper *Does manipulating tokenization aid cross-lingual transfer? A study on POS tagging for non-standardized languages* (Blaschke ea, VarDial 2023, link to come).
 
 ## Usage/details
 
